@@ -1,0 +1,6 @@
+{
+  "name": "git-tree",
+  "version": "0.1.0",
+  "description": "Pannello laterale con l'albero git (come VS Code): si aggiorna a ogni commit, pull, push, merge e mette in evidenza il branch corrente.",
+  "types": "./types/index.d.ts"
+}
