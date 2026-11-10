@@ -23,3 +23,39 @@ export type GraphRow = {
   pass: Seg[]
   bot: Seg[]
 }
+
+export type Graph = {
+  fingerprint: string
+  rows: GraphRow[]
+  lanes: number
+  hasMore: boolean
+}
+
+export type Repo = {
+  state: 'loading' | 'no-repo' | 'ok'
+  name: string
+  branch: string
+  isDetached: boolean
+  isUnborn: boolean
+  upstream: string
+  ahead: number
+  behind: number
+  staged: number
+  changed: number
+  untracked: number
+  conflicts: number
+  head: string
+  /** Local branches and those only on a remote, to switch to. */
+  branches: string[]
+}
+
+declare module 'claude-code' {
+  interface PluginState {
+    'git-tree': {
+      repo: Shaped<Repo>
+      graph: Shaped<Graph>
+      limit: Shaped<number>
+      isPulling: Shaped<boolean>
+    }
+  }
+}
