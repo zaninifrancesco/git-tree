@@ -157,3 +157,114 @@ function parseLog(out: string): Commit[] {
 
   return commits
 }
+
+// --- lane layout ----------------------------------------------------------
+
+type Lane = { sha: string; color: number; s: 0 | 1 | 2 } | null
+
+export function layout(
+  commits: Commit[],
+  head: string,
+): { rows: GraphRow[]; lanes: number } {
+  const byId = new Map(commits.map(c => [c.sha, c]))
+
+  // What HEAD reaches (the current branch's history) and its first-parent line.
+  const onBranch = new Set<string>()
+  const stack = head ? [head] : []
+  while (stack.length > 0) {
+    const sha = stack.pop() as string
+    if (onBranch.has(sha)) continue
+    const c = byId.get(sha)
+    if (!c) continue
+    onBranch.add(sha)
+    for (const p of c.parents) stack.push(p)
+  }
+  const chain = new Set<string>()
+  for (let sha: string | undefined = head; sha && !chain.has(sha); ) {
+    chain.add(sha)
+    sha = byId.get(sha)?.parents[0]
+  }
+
+  const lanes: Lane[] = []
+  let nextColor = 0
+  let maxLane = 0
+  const rows: GraphRow[] = []
+
+  for (const c of commits) {
+    const hit: number[] = []
+    lanes.forEach((l, i) => {
+      if (l && l.sha === c.sha) hit.push(i)
+    })
+
+    let col: number
+    let color: number
+    if (hit.length > 0) {
+      col = hit[0]
+      color = (lanes[col] as NonNullable<Lane>).color
+    } else {
+      col = lanes.findIndex(l => l === null)
+      if (col < 0) col = lanes.length
+      color = nextColor++ % PALETTE.length
+    }
+
+    const hitSet = new Set(hit)
+    const top: Seg[] = hit.map(i => {
+      const l = lanes[i] as NonNullable<Lane>
+
+      return { l: i, c: l.color, s: l.s }
+    })
+    const pass: Seg[] = []
+    lanes.forEach((l, i) => {
+      if (l && !hitSet.has(i)) pass.push({ l: i, c: l.color, s: l.s })
+    })
+    for (const i of hit) lanes[i] = null
+
+    const isChain = chain.has(c.sha)
+    const edgeStyle: 0 | 1 | 2 = onBranch.has(c.sha) ? (isChain ? 1 : 0) : 2
+    const bot: Seg[] = []
+    c.parents.forEach((p, idx) => {
+      const style: 0 | 1 | 2 = idx === 0 ? edgeStyle : onBranch.has(c.sha) ? 0 : 2
+      const existing = lanes.findIndex(l => l !== null && l.sha === p)
+      if (existing >= 0) {
+        bot.push({ l: existing, c: (lanes[existing] as NonNullable<Lane>).color, s: style })
+
+        return
+      }
+      let target: number
+      let useColor: number
+      if (idx === 0) {
+        target = col
+        useColor = color
+      } else {
+        target = lanes.findIndex(l => l === null)
+        if (target < 0) target = lanes.length
+        useColor = nextColor++ % PALETTE.length
+      }
+      lanes[target] = { sha: p, color: useColor, s: style }
+      bot.push({ l: target, c: useColor, s: style })
+    })
+
+    while (lanes.length > 0 && lanes[lanes.length - 1] === null) lanes.pop()
+    for (const s of [...top, ...pass, ...bot]) maxLane = Math.max(maxLane, s.l)
+    maxLane = Math.max(maxLane, col)
+
+    rows.push({
+      sha: c.sha,
+      short: c.sha.slice(0, 7),
+      subject: c.subject,
+      author: c.author,
+      at: c.at,
+      isMerge: c.parents.length > 1,
+      col,
+      color,
+      refs: c.refs,
+      isHead: c.sha === head,
+      isOnBranch: onBranch.has(c.sha),
+      top,
+      pass,
+      bot,
+    })
+  }
+
+  return { rows, lanes: maxLane + 1 }
+}
