@@ -100,3 +100,60 @@ export function parseStatus(out: string): Partial<Repo> {
 
   return info
 }
+
+// --- log ------------------------------------------------------------------
+
+type Commit = {
+  sha: string
+  parents: string[]
+  author: string
+  at: number
+  subject: string
+  refs: RefTag[]
+  isHeadRef: boolean
+}
+
+function parseDecorations(text: string): { refs: RefTag[]; isHeadRef: boolean } {
+  const refs: RefTag[] = []
+  let isHeadRef = false
+  for (const raw of text.split(', ')) {
+    const item = raw.trim()
+    if (!item) continue
+    if (item.startsWith('HEAD -> refs/heads/')) {
+      isHeadRef = true
+      refs.push({ n: item.slice('HEAD -> refs/heads/'.length), k: 'l', cur: true })
+    } else if (item === 'HEAD') {
+      isHeadRef = true
+    } else if (item.startsWith('refs/heads/')) {
+      refs.push({ n: item.slice('refs/heads/'.length), k: 'l' })
+    } else if (item.startsWith('refs/remotes/')) {
+      const name = item.slice('refs/remotes/'.length)
+      if (!name.endsWith('/HEAD')) refs.push({ n: name, k: 'r' })
+    } else if (item.startsWith('tag: refs/tags/')) {
+      refs.push({ n: item.slice('tag: refs/tags/'.length), k: 't' })
+    }
+  }
+
+  return { refs, isHeadRef }
+}
+
+function parseLog(out: string): Commit[] {
+  const commits: Commit[] = []
+  for (const line of out.split('\n')) {
+    if (!line) continue
+    const [sha, parents, author, at, deco, ...subject] = line.split(SEP)
+    if (!sha) continue
+    const { refs, isHeadRef } = parseDecorations(deco ?? '')
+    commits.push({
+      sha,
+      parents: parents ? parents.split(' ') : [],
+      author: author ?? '',
+      at: Number(at) || 0,
+      subject: subject.join(SEP),
+      refs,
+      isHeadRef,
+    })
+  }
+
+  return commits
+}
