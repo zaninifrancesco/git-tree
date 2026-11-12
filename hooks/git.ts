@@ -268,3 +268,55 @@ export function layout(
 
   return { rows, lanes: maxLane + 1 }
 }
+
+// --- fetching ---------------------------------------------------------------
+
+export type Probe =
+  | { kind: 'no-repo' }
+  | { kind: 'ok'; repo: Repo; fingerprint: string }
+
+const ENV = { GIT_OPTIONAL_LOCKS: '0' }
+
+/** The cheap part, run on every tick: status, the refs and HEAD. */
+export async function probe(sys: Sys, limit: number): Promise<Probe> {
+  const cwd = await sys.session.cwd()
+  const git = (args: string[]) =>
+    sys.process.run(['git', '-c', 'core.quotepath=off', ...args], {
+      cwd,
+      env: ENV,
+      timeoutMs: 15000,
+    })
+
+  const top = await git(['rev-parse', '--show-toplevel'])
+  if (top.exitCode !== 0) return { kind: 'no-repo' }
+  const root = top.stdout.trim()
+
+  const [status, refs, head] = await Promise.all([
+    git(['status', '--porcelain=v1', '--branch']),
+    git([
+      'for-each-ref',
+      '--format=%(refname) %(objectname)',
+      'refs/heads',
+      'refs/remotes',
+      'refs/tags',
+    ]),
+    git(['rev-parse', 'HEAD']),
+  ])
+  const branches = listBranches(refs.stdout)
+  const headSha = head.exitCode === 0 ? head.stdout.trim() : ''
+  const info = parseStatus(status.stdout)
+  const repo: Repo = {
+    ...EMPTY_REPO,
+    ...info,
+    state: 'ok',
+    name: root.split(/[\\/]/).filter(Boolean).pop() ?? root,
+    head: headSha,
+    branches,
+  }
+
+  return {
+    kind: 'ok',
+    repo,
+    fingerprint: [headSha, info.branch, limit, refs.stdout].join('|'),
+  }
+}
