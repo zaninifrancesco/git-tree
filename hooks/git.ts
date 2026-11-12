@@ -320,3 +320,60 @@ export async function probe(sys: Sys, limit: number): Promise<Probe> {
     fingerprint: [headSha, info.branch, limit, refs.stdout].join('|'),
   }
 }
+
+/** The costly part, run when the fingerprint moved. */
+export async function loadGraph(
+  sys: Sys,
+  limit: number,
+  head: string,
+  fingerprint: string,
+): Promise<Graph> {
+  const cwd = await sys.session.cwd()
+  const format = ['%H', '%P', '%an', '%at', '%D', '%s'].join('%x1f')
+  let stdout = ''
+  const log = await sys.process.run(
+    [
+      'git',
+      '-c',
+      'core.quotepath=off',
+      'log',
+      '--topo-order',
+      '--decorate=full',
+      `-n${limit + 1}`,
+      `--format=${format}`,
+      '--branches',
+      '--remotes',
+      '--tags',
+      'HEAD',
+    ],
+    { cwd, env: ENV, timeoutMs: 30000 },
+  )
+  if (log.exitCode !== 0) {
+    // An unborn HEAD makes `HEAD` a bad revision: ask without it.
+    const retry = await sys.process.run(
+      [
+        'git',
+        'log',
+        '--topo-order',
+        '--decorate=full',
+        `-n${limit + 1}`,
+        `--format=${format}`,
+        '--branches',
+        '--remotes',
+        '--tags',
+      ],
+      { cwd, env: ENV, timeoutMs: 30000 },
+    )
+    if (retry.exitCode !== 0) return { ...EMPTY_GRAPH, fingerprint }
+    stdout = retry.stdout
+  } else {
+    stdout = log.stdout
+  }
+
+  const commits = parseLog(stdout)
+  const hasMore = commits.length > limit
+  const shown = hasMore ? commits.slice(0, limit) : commits
+  const { rows, lanes } = layout(shown, head)
+
+  return { fingerprint, rows, lanes, hasMore }
+}
