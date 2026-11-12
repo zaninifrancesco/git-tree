@@ -377,3 +377,14 @@ export async function loadGraph(
 
   return { fingerprint, rows, lanes, hasMore }
 }
+
+export function ago(sec: number, nowMs: number): string {
+  const d = Math.max(0, nowMs / 1000 - sec)
+  if (d < 60) return 'adesso'
+  if (d < 3600) return `${Math.floor(d / 60)} min fa`
+  if (d < 86400) return `${Math.floor(d / 3600)} h fa`
+  if (d < 86400 * 30) return `${Math.floor(d / 86400)} g fa`
+  if (d < 86400 * 365) return `${Math.floor(d / (86400 * 30))} mesi fa`
+
+  return `${Math.floor(d / (86400 * 365))} anni fa`
+}
