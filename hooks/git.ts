@@ -405,3 +405,21 @@ export async function runPull(sys: Sys): Promise<{ isOk: boolean; text: string }
 
   return { isOk: done.exitCode === 0, text: text.slice(0, 240) || (done.exitCode === 0 ? 'Pull completato' : 'Pull fallito') }
 }
+
+/** Local branches first, then the ones that exist only on a remote (git switch tracks them). */
+export function listBranches(refs: string): string[] {
+  const local = new Set<string>()
+  const remote = new Set<string>()
+  for (const line of refs.split('\n')) {
+    const name = line.split(' ')[0] ?? ''
+    if (name.startsWith('refs/heads/')) local.add(name.slice('refs/heads/'.length))
+    else if (name.startsWith('refs/remotes/')) {
+      const rest = name.slice('refs/remotes/'.length)
+      const short = rest.slice(rest.indexOf('/') + 1)
+      if (rest.includes('/') && short !== 'HEAD') remote.add(short)
+    }
+  }
+  const only = [...remote].filter(n => !local.has(n))
+
+  return [...[...local].sort(), ...only.sort()]
+}
