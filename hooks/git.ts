@@ -388,3 +388,20 @@ export function ago(sec: number, nowMs: number): string {
 
   return `${Math.floor(d / (86400 * 365))} anni fa`
 }
+
+/** `git pull` as the pull button runs it: never waits for a prompt or an editor. */
+export async function runPull(sys: Sys): Promise<{ isOk: boolean; text: string }> {
+  const cwd = await sys.session.cwd()
+  const done = await sys.process.run(['git', 'pull', '--no-edit'], {
+    cwd,
+    env: { GIT_TERMINAL_PROMPT: '0', GIT_EDITOR: 'true', GIT_MERGE_AUTOEDIT: 'no' },
+    timeoutMs: 120000,
+  })
+  const lines = (done.exitCode === 0 ? done.stdout : done.stderr || done.stdout)
+    .split('\n')
+    .map(l => l.trim())
+    .filter(Boolean)
+  const text = (done.exitCode === 0 ? lines.slice(0, 2) : lines.slice(0, 3)).join(' · ')
+
+  return { isOk: done.exitCode === 0, text: text.slice(0, 240) || (done.exitCode === 0 ? 'Pull completato' : 'Pull fallito') }
+}
