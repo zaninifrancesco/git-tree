@@ -423,3 +423,17 @@ export function listBranches(refs: string): string[] {
 
   return [...[...local].sort(), ...only.sort()]
 }
+
+/** `git switch` to a branch the pane listed: never waits for a prompt. */
+export async function runSwitch(sys: Sys, branch: string): Promise<{ isOk: boolean; text: string }> {
+  const cwd = await sys.session.cwd()
+  const done = await sys.process.run(['git', 'switch', branch], {
+    cwd,
+    env: { GIT_TERMINAL_PROMPT: '0' },
+    timeoutMs: 60000,
+  })
+  const out = (done.exitCode === 0 ? done.stderr || done.stdout : done.stderr || done.stdout) ?? ''
+  const text = out.split('\n').map(l => l.trim()).filter(Boolean).slice(0, 3).join(' · ')
+
+  return { isOk: done.exitCode === 0, text: text.slice(0, 240) }
+}
