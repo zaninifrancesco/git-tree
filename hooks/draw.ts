@@ -75,3 +75,36 @@ export function rowSvg(row: GraphRow, lanes: number): { source: string; isAnimat
       `</svg>`,
   }
 }
+
+export type Cell = { ch: string; color: string }
+
+/** The same row in box-drawing glyphs, for the terminal, which draws no SVG. */
+export function rowCells(row: GraphRow, lanes: number): Cell[] {
+  const cells: Cell[] = Array.from({ length: lanes * 2 }, () => ({ ch: ' ', color: '' }))
+  const put = (i: number, ch: string, colorIndex: number, force = true) => {
+    if (i < 0 || i >= cells.length) return
+    if (!force && cells[i].ch !== ' ') return
+    cells[i] = { ch, color: color(colorIndex) }
+  }
+  const lane = (l: number) => Math.min(l, lanes - 1) * 2
+  const across = (a: number, b: number, colorIndex: number) => {
+    for (let i = Math.min(lane(a), lane(b)) + 1; i < Math.max(lane(a), lane(b)); i++) {
+      put(i, '─', colorIndex, false)
+    }
+  }
+
+  for (const s of row.pass) put(lane(s.l), '│', s.c)
+  for (const s of row.top) {
+    if (s.l === row.col) continue
+    across(s.l, row.col, s.c)
+    put(lane(s.l), s.l > row.col ? '╯' : '╰', s.c)
+  }
+  for (const s of row.bot) {
+    if (s.l === row.col) continue
+    across(s.l, row.col, s.c)
+    put(lane(s.l), s.l > row.col ? '╮' : '╭', s.c)
+  }
+  put(lane(row.col), row.isHead ? '◉' : row.isMerge ? '◆' : '●', row.color)
+
+  return cells
+}
