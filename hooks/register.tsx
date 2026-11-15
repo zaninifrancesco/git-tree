@@ -45,3 +45,40 @@ const limitAtom = atom({ plugin: 'git-tree', key: 'limit' } as const, PAGE, {
 let poll: Timer | undefined
 let isBusy = false
 let isQueued = false
+
+/** Looks at the repository and redraws only what moved. */
+async function refresh($: Dollar): Promise<void> {
+  if (isBusy) {
+    isQueued = true
+
+    return
+  }
+  isBusy = true
+  try {
+    do {
+      isQueued = false
+      const limit = await read($, limitAtom)
+      const seen = await probe(sysOf($), limit)
+      if (seen.kind === 'no-repo') {
+        const old = await read($, repoAtom)
+        if (old.state !== 'no-repo') {
+          await update($, repoAtom, () => ({ ...EMPTY_REPO, state: 'no-repo' as const }))
+        }
+        continue
+      }
+      const old = await read($, repoAtom)
+      if (JSON.stringify(old) !== JSON.stringify(seen.repo)) {
+        await update($, repoAtom, () => seen.repo)
+      }
+      const graph = await read($, graphAtom)
+      if (graph.fingerprint !== seen.fingerprint) {
+        const fresh = await loadGraph(sysOf($), limit, seen.repo.head, seen.fingerprint)
+        await update($, graphAtom, () => fresh)
+      }
+    } while (isQueued)
+  } catch {
+    // A git call that failed or timed out: what is drawn stays, the next tick tries again.
+  } finally {
+    isBusy = false
+  }
+}
