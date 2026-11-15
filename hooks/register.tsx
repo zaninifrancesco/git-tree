@@ -82,3 +82,47 @@ async function refresh($: Dollar): Promise<void> {
     isBusy = false
   }
 }
+
+function open($: Dollar) {
+  return $.ui.open({ id: PANE, title: 'Git', columns: 56 })
+}
+
+const pullingAtom = atom({ plugin: 'git-tree', key: 'isPulling' } as const, false, {
+  shape: 'pulling-1',
+})
+
+/** The pull button: one pull at a time, the result as a toast. */
+async function pull($: Dollar): Promise<void> {
+  if (await read($, pullingAtom)) return
+  await update($, pullingAtom, () => true)
+  try {
+    const out = await runPull(sysOf($))
+    void $.ui.toast(out.isOk ? `⬇ ${out.text}` : `Pull non riuscito: ${out.text}`, {
+      timeoutMs: out.isOk ? 5000 : 12000,
+    })
+  } catch (error) {
+    void $.ui.toast(`Pull non riuscito: ${String(error).slice(0, 200)}`, { timeoutMs: 12000 })
+  } finally {
+    await update($, pullingAtom, () => false)
+    void refresh($)
+  }
+}
+
+/** The branch selector: switches to a branch the pane listed, one operation at a time. */
+async function switchTo($: Dollar, branch: string): Promise<void> {
+  if (await read($, pullingAtom)) return
+  const repo = await read($, repoAtom)
+  if (!repo.branches.includes(branch) || branch === repo.branch) return
+  await update($, pullingAtom, () => true)
+  try {
+    const out = await runSwitch(sysOf($), branch)
+    void $.ui.toast(out.isOk ? `⎇ Ora su ${branch}` : `Cambio branch non riuscito: ${out.text}`, {
+      timeoutMs: out.isOk ? 4000 : 12000,
+    })
+  } catch (error) {
+    void $.ui.toast(`Cambio branch non riuscito: ${String(error).slice(0, 200)}`, { timeoutMs: 12000 })
+  } finally {
+    await update($, pullingAtom, () => false)
+    void refresh($)
+  }
+}
