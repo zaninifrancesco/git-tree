@@ -26,3 +26,11 @@ test('the layout puts a branch on its own lane and joins it at the merge', () =>
   // everything is reachable from HEAD here
   expect(rows.every(r => r.isOnBranch)).toBe(true)
 })
+
+test('a commit HEAD cannot reach is marked as off the current branch', () => {
+  const head = commit('a', ['r'])
+  const { rows } = layout([commit('f', ['r']), head, commit('r', [])], head.sha)
+
+  expect(rows[0].isOnBranch).toBe(false)
+  expect(rows[1].isOnBranch).toBe(true)
+})
