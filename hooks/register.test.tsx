@@ -34,3 +34,19 @@ test('a commit HEAD cannot reach is marked as off the current branch', () => {
   expect(rows[0].isOnBranch).toBe(false)
   expect(rows[1].isOnBranch).toBe(true)
 })
+
+test('status gives the branch, how far it is and what changed', () => {
+  const info = parseStatus(
+    ['## main...origin/main [ahead 2, behind 1]', 'M  a.ts', ' M b.ts', '?? c.ts', 'UU d.ts'].join('\n'),
+  )
+
+  expect(info.branch).toBe('main')
+  expect(info.upstream).toBe('origin/main')
+  expect(info.ahead).toBe(2)
+  expect(info.behind).toBe(1)
+  expect(info.staged).toBe(1)
+  expect(info.changed).toBe(1)
+  expect(info.untracked).toBe(1)
+  expect(info.conflicts).toBe(1)
+  expect(parseStatus('## HEAD (no branch)').isDetached).toBe(true)
+})
