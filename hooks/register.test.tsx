@@ -55,3 +55,49 @@ test('ages read in italian', () => {
   expect(ago(1000, 1000 * 1000 + 5_000)).toBe('adesso')
   expect(ago(0, 3 * 3600 * 1000)).toBe('3 h fa')
 })
+
+const PANE = {
+  plugin: 'git-tree',
+  component: 'Pane',
+  requestId: 'git-tree',
+  props: {
+    title: 'Git',
+    isFocused: false,
+    bodyColumns: 56,
+    placement: 'dock',
+    scroll: { offset: 0, bodyRows: 30 },
+    view: {},
+  },
+} as const
+
+test('the pane shows the current branch and the commits, on every surface', async ($, on) => {
+  const head = 'a'.padEnd(40, '0')
+  const { rows, lanes } = layout(
+    [
+      { ...commit('a', ['r'], 'work in progress'), refs: [{ n: 'feature', k: 'l' as const, cur: true }], isHeadRef: true },
+      commit('r', [], 'first commit'),
+    ],
+    head,
+  )
+  const stored: Record<string, unknown> = {
+    repo: {
+      shape: 'repo-2',
+      value: {
+        state: 'ok', name: 'demo', branch: 'feature', isDetached: false, isUnborn: false,
+        upstream: 'origin/feature', ahead: 1, behind: 0, staged: 0, changed: 2, untracked: 0,
+        conflicts: 0, head, branches: ['feature', 'main'],
+      },
+    },
+    graph: { shape: 'graph-1', value: { fingerprint: 'x', rows, lanes, hasMore: false } },
+  }
+  on('clock.now', () => ({ value: 1_700_000_100_000 }))
+  on('state.get', (_, e) => ({ value: { value: stored[e.key], version: 1 } }))
+
+  for (const surface of ['terminal', 'desktop', 'vscode', 'mobile'] as const) {
+    const ui = await $.ui.mount({ ...PANE, surface })
+
+    expect(await ui.find({ type: 'Text', text: / feature / })).toBeTruthy()
+    expect(await ui.find({ type: 'Text', text: /first commit/ })).toBeTruthy()
+    await ui.unmount()
+  }
+})
