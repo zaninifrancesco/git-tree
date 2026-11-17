@@ -50,3 +50,8 @@ test('status gives the branch, how far it is and what changed', () => {
   expect(info.conflicts).toBe(1)
   expect(parseStatus('## HEAD (no branch)').isDetached).toBe(true)
 })
+
+test('ages read in italian', () => {
+  expect(ago(1000, 1000 * 1000 + 5_000)).toBe('adesso')
+  expect(ago(0, 3 * 3600 * 1000)).toBe('3 h fa')
+})
