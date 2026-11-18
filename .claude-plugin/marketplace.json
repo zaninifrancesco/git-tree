@@ -1,0 +1,11 @@
+{
+  "name": "local-mods",
+  "owner": { "name": "Francesco Zanini" },
+  "plugins": [
+    {
+      "name": "git-tree",
+      "source": "./",
+      "description": "Pannello laterale con l'albero git (come VS Code): si aggiorna a ogni commit, pull, push, merge e mette in evidenza il branch corrente."
+    }
+  ]
+}
