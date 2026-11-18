@@ -98,6 +98,7 @@ test('the pane shows the current branch and the commits, on every surface', asyn
 
     expect(await ui.find({ type: 'Text', text: / feature / })).toBeTruthy()
     expect(await ui.find({ type: 'Text', text: /first commit/ })).toBeTruthy()
+    expect(await ui.find({ type: 'Select' })).toBeTruthy()
     await ui.unmount()
   }
 })
