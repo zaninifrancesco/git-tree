@@ -101,3 +101,20 @@ test('the pane shows the current branch and the commits, on every surface', asyn
     await ui.unmount()
   }
 })
+
+test('a folder that is no repository says so', async ($, on) => {
+  on('clock.now', () => ({ value: 1_700_000_100_000 }))
+  on('state.get', (_, e) => ({
+    value: {
+      value:
+        e.key === 'repo'
+          ? { shape: 'repo-2', value: { state: 'no-repo', name: '', branch: '', isDetached: false, isUnborn: false, upstream: '', ahead: 0, behind: 0, staged: 0, changed: 0, untracked: 0, conflicts: 0, head: '', branches: [] } }
+          : undefined,
+      version: 1,
+    },
+  }))
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+
+  expect(await ui.find({ type: 'Text', text: /non è un repository/ })).toBeTruthy()
+  await ui.unmount()
+})
