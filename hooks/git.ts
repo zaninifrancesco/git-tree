@@ -380,13 +380,13 @@ export async function loadGraph(
 
 export function ago(sec: number, nowMs: number): string {
   const d = Math.max(0, nowMs / 1000 - sec)
-  if (d < 60) return 'adesso'
-  if (d < 3600) return `${Math.floor(d / 60)} min fa`
-  if (d < 86400) return `${Math.floor(d / 3600)} h fa`
-  if (d < 86400 * 30) return `${Math.floor(d / 86400)} g fa`
-  if (d < 86400 * 365) return `${Math.floor(d / (86400 * 30))} mesi fa`
+  if (d < 60) return 'now'
+  if (d < 3600) return `${Math.floor(d / 60)} min ago`
+  if (d < 86400) return `${Math.floor(d / 3600)} h ago`
+  if (d < 86400 * 30) return `${Math.floor(d / 86400)} d ago`
+  if (d < 86400 * 365) return `${Math.floor(d / (86400 * 30))} mo ago`
 
-  return `${Math.floor(d / (86400 * 365))} anni fa`
+  return `${Math.floor(d / (86400 * 365))} y ago`
 }
 
 /** `git pull` as the pull button runs it: never waits for a prompt or an editor. */
@@ -403,7 +403,7 @@ export async function runPull(sys: Sys): Promise<{ isOk: boolean; text: string }
     .filter(Boolean)
   const text = (done.exitCode === 0 ? lines.slice(0, 2) : lines.slice(0, 3)).join(' · ')
 
-  return { isOk: done.exitCode === 0, text: text.slice(0, 240) || (done.exitCode === 0 ? 'Pull completato' : 'Pull fallito') }
+  return { isOk: done.exitCode === 0, text: text.slice(0, 240) || (done.exitCode === 0 ? 'Pull complete' : 'Pull failed') }
 }
 
 /** Local branches first, then the ones that exist only on a remote (git switch tracks them). */

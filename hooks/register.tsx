@@ -97,11 +97,11 @@ async function pull($: Dollar): Promise<void> {
   await update($, pullingAtom, () => true)
   try {
     const out = await runPull(sysOf($))
-    void $.ui.toast(out.isOk ? `⬇ ${out.text}` : `Pull non riuscito: ${out.text}`, {
+    void $.ui.toast(out.isOk ? `⬇ ${out.text}` : `Pull failed: ${out.text}`, {
       timeoutMs: out.isOk ? 5000 : 12000,
     })
   } catch (error) {
-    void $.ui.toast(`Pull non riuscito: ${String(error).slice(0, 200)}`, { timeoutMs: 12000 })
+    void $.ui.toast(`Pull failed: ${String(error).slice(0, 200)}`, { timeoutMs: 12000 })
   } finally {
     await update($, pullingAtom, () => false)
     void refresh($)
@@ -116,11 +116,11 @@ async function switchTo($: Dollar, branch: string): Promise<void> {
   await update($, pullingAtom, () => true)
   try {
     const out = await runSwitch(sysOf($), branch)
-    void $.ui.toast(out.isOk ? `⎇ Ora su ${branch}` : `Cambio branch non riuscito: ${out.text}`, {
+    void $.ui.toast(out.isOk ? `⎇ Now on ${branch}` : `Switch failed: ${out.text}`, {
       timeoutMs: out.isOk ? 4000 : 12000,
     })
   } catch (error) {
-    void $.ui.toast(`Cambio branch non riuscito: ${String(error).slice(0, 200)}`, { timeoutMs: 12000 })
+    void $.ui.toast(`Switch failed: ${String(error).slice(0, 200)}`, { timeoutMs: 12000 })
   } finally {
     await update($, pullingAtom, () => false)
     void refresh($)
@@ -131,7 +131,7 @@ export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     await $.command.register({
       name: 'git-tree',
-      description: "Apre il pannello con l'albero git",
+      description: 'Opens the git tree pane',
     })
     void open($)
     void refresh($)
@@ -145,7 +145,7 @@ export const register: Register = on => {
     await open($)
     void refresh($)
 
-    return { text: "Pannello dell'albero git aperto." }
+    return { text: 'Git tree pane opened.' }
   })
 
   // A commit, pull, push or merge is mostly a shell command: look right after.
@@ -174,19 +174,19 @@ export const register: Register = on => {
     if (repo.state !== 'ok') {
       return (
         <Box flexDirection="column" padding={1} gap={1}>
-          <Text bold>Albero git</Text>
+          <Text bold>Git tree</Text>
           <Text dimColor>
             {repo.state === 'loading'
-              ? 'Leggo il repository…'
-              : 'La cartella della sessione non è un repository git.'}
+              ? 'Reading the repository…'
+              : 'The session folder is not a git repository.'}
           </Text>
         </Box>
       )
     }
 
     const label = repo.isDetached
-      ? `HEAD staccato @ ${repo.head.slice(0, 7)}`
-      : repo.branch || '(nessun branch)'
+      ? `Detached HEAD @ ${repo.head.slice(0, 7)}`
+      : repo.branch || '(no branch)'
     const lanes = Math.max(1, Math.min(graph.lanes, MAX_LANES))
     const hasChanges = repo.staged + repo.changed + repo.untracked + repo.conflicts > 0
 
@@ -204,7 +204,7 @@ export const register: Register = on => {
         <Button
           key="pull"
           variant="primary"
-          label={isPulling ? 'Operazione in corso…' : repo.behind > 0 ? `⬇ Pull (${repo.behind})` : '⬇ Pull'}
+          label={isPulling ? 'Working…' : repo.behind > 0 ? `⬇ Pull (${repo.behind})` : '⬇ Pull'}
           onPress={() => void pull($)}
         />
       </Box>
@@ -228,17 +228,17 @@ export const register: Register = on => {
         </Box>
         <Text dimColor wrap="truncate-end">
           {repo.name}
-          {repo.upstream ? ` → ${repo.upstream}` : repo.isUnborn ? ' · nessun commit' : ' · nessun upstream'}
+          {repo.upstream ? ` → ${repo.upstream}` : repo.isUnborn ? ' · no commits yet' : ' · no upstream'}
         </Text>
         <Text wrap="wrap">
           {repo.ahead > 0 && <Text color="success" bold>{`↑${repo.ahead} `}</Text>}
           {repo.behind > 0 && <Text color="warning" bold>{`↓${repo.behind} `}</Text>}
-          {repo.staged > 0 && <Text color="success">{`● ${repo.staged} in stage  `}</Text>}
-          {repo.changed > 0 && <Text color="warning">{`✎ ${repo.changed} modificati  `}</Text>}
-          {repo.untracked > 0 && <Text dimColor>{`? ${repo.untracked} nuovi  `}</Text>}
-          {repo.conflicts > 0 && <Text color="error" bold>{`⚠ ${repo.conflicts} conflitti`}</Text>}
+          {repo.staged > 0 && <Text color="success">{`● ${repo.staged} staged  `}</Text>}
+          {repo.changed > 0 && <Text color="warning">{`✎ ${repo.changed} modified  `}</Text>}
+          {repo.untracked > 0 && <Text dimColor>{`? ${repo.untracked} untracked  `}</Text>}
+          {repo.conflicts > 0 && <Text color="error" bold>{`⚠ ${repo.conflicts} conflicts`}</Text>}
           {!hasChanges && repo.ahead === 0 && repo.behind === 0 && (
-            <Text dimColor>✓ tutto pulito e allineato</Text>
+            <Text dimColor>✓ clean and up to date</Text>
           )}
         </Text>
       </Box>
@@ -322,20 +322,20 @@ export const register: Register = on => {
       <Box flexDirection="column">
         {toolbar}
         {header}
-        {graph.rows.length === 0 && <Text dimColor>Nessun commit ancora.</Text>}
+        {graph.rows.length === 0 && <Text dimColor>No commits yet.</Text>}
         {rows}
         <Box flexDirection="row" gap={2} marginTop={1}>
           {graph.hasMore && (
             <Button
               key="more"
-              label={`Mostra altri ${PAGE} commit`}
+              label={`Show ${PAGE} more commits`}
               onPress={async () => {
                 await update($, limitAtom, n => n + PAGE)
                 void refresh($)
               }}
             />
           )}
-          <Button key="refresh" label="Aggiorna" dimColor onPress={() => void refresh($)} />
+          <Button key="refresh" label="Refresh" dimColor onPress={() => void refresh($)} />
         </Box>
       </Box>
     )

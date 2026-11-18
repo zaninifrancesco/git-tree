@@ -1,7 +1,7 @@
 /** Un tratto di linea del grafo: corsia, indice colore, stile (0 normale, 1 ramo corrente, 2 attenuato). */
 export type Seg = { l: number; c: number; s: 0 | 1 | 2 }
 
-/** Un'etichetta su un commit: branch locale (l), remoto (r) o tag (t); `cur` per il branch corrente. */
+/** A label on a commit: local branch (l), remote (r) or tag (t); `cur` for the current branch. */
 export type RefTag = { n: string; k: 'l' | 'r' | 't'; cur?: true }
 
 export type GraphRow = {
@@ -15,9 +15,9 @@ export type GraphRow = {
   col: number
   color: number
   refs: RefTag[]
-  /** Il commit su cui punta HEAD. */
+  /** The commit HEAD points at. */
   isHead: boolean
-  /** Raggiungibile da HEAD (fa parte del branch corrente). */
+  /** Reachable from HEAD (part of the current branch). */
   isOnBranch: boolean
   top: Seg[]
   pass: Seg[]

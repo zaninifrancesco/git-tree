@@ -51,9 +51,9 @@ test('status gives the branch, how far it is and what changed', () => {
   expect(parseStatus('## HEAD (no branch)').isDetached).toBe(true)
 })
 
-test('ages read in italian', () => {
-  expect(ago(1000, 1000 * 1000 + 5_000)).toBe('adesso')
-  expect(ago(0, 3 * 3600 * 1000)).toBe('3 h fa')
+test('ages read in english', () => {
+  expect(ago(1000, 1000 * 1000 + 5_000)).toBe('now')
+  expect(ago(0, 3 * 3600 * 1000)).toBe('3 h ago')
 })
 
 const PANE = {
@@ -116,6 +116,6 @@ test('a folder that is no repository says so', async ($, on) => {
   }))
   const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
 
-  expect(await ui.find({ type: 'Text', text: /non è un repository/ })).toBeTruthy()
+  expect(await ui.find({ type: 'Text', text: /not a git repository/ })).toBeTruthy()
   await ui.unmount()
 })

@@ -4,11 +4,14 @@ A [Claude Code](https://claude.com/claude-code) mod that adds a **git sidebar**:
 
 Preview and walkthrough: <https://git-tree-cc.vercel.app>
 
-> The sidebar's labels are in Italian (`Aggiorna`, `modificati`, `conflitti`, ...). The commands and the rest of this README are in English.
+<p align="center">
+  <img src="docs/panel-top.png" alt="The git-tree sidebar: branch selector, Pull button, clean status and the commit tree with coloured branch lanes" width="300">
+  <img src="docs/panel-mid.png" alt="The git-tree sidebar further down: merges, a v1.0.0 tag and a hotfix branch joining main" width="290">
+</p>
 
 ## What you get
 
-- **Commit graph**: lanes per branch, merge commits, tags and remote refs, newest first, 200 commits at a time (`Mostra altri 200 commit` loads more).
+- **Commit graph**: lanes per branch, merge commits, tags and remote refs, newest first, 200 commits at a time (`Show 200 more commits` loads more).
 - **Branch header**: current branch, upstream, ahead/behind counters and a summary of staged, modified, untracked and conflicting files.
 - **Branch selector**: switch to any local branch listed in the pane (runs `git switch`).
 - **Pull button**: runs `git pull --no-edit` (never waits for a prompt) and reports the result as a toast. Shows `⬇ Pull (N)` when you are N commits behind.
@@ -51,9 +54,9 @@ The pane opens automatically when a session starts. If you closed it, run:
 ## Usage
 
 - **Switch branch**: open the selector at the top of the pane and pick a branch. If git refuses (for example because of local changes that would be overwritten), the reason is shown in a toast and nothing changes.
-- **Pull**: press `⬇ Pull`. Only one pull or switch runs at a time; the button reads `Operazione in corso…` while it works.
+- **Pull**: press `⬇ Pull`. Only one pull or switch runs at a time; the button reads `Working…` while it works.
 - **Read the tree**: the highlighted pill with `⎇` is the branch you are on, coloured pills are other local branches, `◆` marks tags, dimmed coloured text is a remote ref. Commits not reachable from the current branch are dimmed.
-- **Refresh now**: press `Aggiorna` at the bottom of the pane.
+- **Refresh now**: press `Refresh` at the bottom of the pane.
 - In terminals that cannot draw SVG the graph falls back to box-drawing characters on a single line per commit.
 
 ## Troubleshooting
@@ -82,7 +85,7 @@ Restart Claude Code, then run `/git-tree`. Make sure the plugin is enabled in `/
 The session's working directory is not inside a git repository. Start Claude Code from a repo folder.
 
 **The tree looks stale**
-Press `Aggiorna`. The pane polls every 3 seconds; very long histories only load 200 commits until you ask for more.
+Press `Refresh`. The pane polls every 3 seconds; very long histories only load 200 commits until you ask for more.
 
 ## Development
 
