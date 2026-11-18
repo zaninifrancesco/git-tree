@@ -1,4 +1,4 @@
-/** Un tratto di linea del grafo: corsia, indice colore, stile (0 normale, 1 ramo corrente, 2 attenuato). */
+/** One stroke of the graph: lane, colour index, style (0 normal, 1 current branch, 2 dimmed). */
 export type Seg = { l: number; c: number; s: 0 | 1 | 2 }
 
 /** A label on a commit: local branch (l), remote (r) or tag (t); `cur` for the current branch. */
@@ -9,7 +9,7 @@ export type GraphRow = {
   short: string
   subject: string
   author: string
-  /** Secondi dall'epoch. */
+  /** Seconds since the epoch. */
   at: number
   isMerge: boolean
   col: number
